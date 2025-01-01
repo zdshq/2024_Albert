@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>2024 已过 · 2025 即将到来 · 蔡美轩</title>
+  <style>
+    /* ========== 0. 全局重置 ========== */
+    * {
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      font-family: "Microsoft YaHei", Arial, sans-serif;
+      color: #fff;
+      overflow: hidden; 
+      position: relative;
+    }
+
+    /* ========== 1. 粒子背景画布 ========== */
+    #particleCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      background: radial-gradient(circle, #000 40%, #0b0b0b 100%);
+    }
+
+    /* 
+      ========== A. 前置介绍页面 ==========
+      点击「进入相册」后淡出 
+    */
+    .intro-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; 
+      height: 100vh;
+      z-index: 100;  
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 20px;
+      transition: opacity 0.8s ease, transform 0.8s ease;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .intro-page.hidden {
+      opacity: 0;
+      transform: translateY(-20px);
+      pointer-events: none;
+    }
+    .intro-page h1 {
+      font-size: 3rem;
+      margin-bottom: 30px;
+      text-shadow: 0 0 8px #fff;
+    }
+    .intro-page p {
+      font-size: 1.2rem;
+      line-height: 1.8;
+      max-width: 700px;
+      margin-bottom: 50px;
+      white-space: pre-wrap;
+    }
+    .intro-page button {
+      font-size: 1rem;
+      padding: 12px 24px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid #fff;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .intro-page button:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    /* 
+      ========== B. 相册选择界面 ==========
+      2×2 网格居中
+    */
+    .album-grid {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; 
+      height: 100vh;
+      z-index: 2; 
+      display: none; 
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .album-grid h1 {
+      font-size: 2rem;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px #fff;
+    }
+    .albums {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, auto);
+      gap: 30px;
+      margin: 0 auto;
+      justify-items: center;
+      align-items: center;
+    }
+    .album-item {
+      width: 200px;
+      cursor: pointer;
+      text-align: center;
+      transition: transform 0.4s;
+    }
+    .album-item img {
+      width: 200px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+    .album-item p {
+      margin-top: 10px;
+      font-size: 1rem;
+    }
+    .album-item:hover {
+      transform: scale(1.05) translateY(-5px);
+    }
+
+    /* 
+      ========== C. 3D 相册界面 ==========
+      3D 环形浏览
+    */
+    .scene {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; 
+      height: 100vh;
+      z-index: 3; 
+      display: none;  
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 返回按钮 */
+    .back-button {
+      position: absolute;
+      top: 20px; 
+      right: 20px;
+      padding: 10px 15px;
+      font-size: 14px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid #fff;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.3s;
+      z-index: 10;
+    }
+    .back-button:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .carousel-container {
+      position: relative;
+      width: 800px; 
+      height: 500px;
+      perspective: 1000px;
+    }
+    .carousel {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) translateZ(-400px);
+      width: 800px; 
+      height: 500px;
+      transform-style: preserve-3d;
+      transition: transform 1s ease;
+    }
+    .card {
+      position: absolute;
+      width: 800px; 
+      height: 500px;
+      top: 0; left: 0;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      overflow: hidden;
+      transform-style: preserve-3d;
+      transition: transform 1s ease, box-shadow 0.3s;
+    }
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain; 
+      background: #000; 
+    }
+    .card:hover {
+      transform: scale(1.02) translateZ(20px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.7);
+    }
+
+    /* 箭头：初始隐藏，只有.scene显示时再显示 */
+    .nav-button {
+      display: none;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 3rem;
+      color: rgba(255,255,255,0.7);
+      user-select: none;
+      cursor: pointer;
+      transition: color 0.3s;
+      z-index: 3;
+    }
+    .nav-button.left {
+      left: 60px;
+    }
+    .nav-button.right {
+      right: 60px;
+    }
+    .nav-button:hover {
+      color: #fff;
+    }
+    .scene .nav-button {
+      display: block !important;
+    }
+
+    /* 
+      ========== D. 全屏预览弹窗 ==========
+    */
+    .fullscreen-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; 
+      height: 100vh;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .fullscreen-overlay img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+      background: #000;
+      border-radius: 8px;
+    }
+    .fullscreen-overlay .close-btn {
+      position: absolute;
+      top: 40px; right: 40px;
+      font-size: 2rem;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* 
+      ========== E. 音乐播放小插件 ==========
+      悬浮在页面左上/右上等位置，含播放/暂停切换
+    */
+    .music-player {
+      position: fixed;
+      top: 20px; 
+      left: 20px; 
+      z-index: 9999;
+      display: flex;
+      gap: 10px;
+    }
+    .music-player button {
+      padding: 8px 12px;
+      font-size: 14px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid #fff;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .music-player button:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    /* ========== F. 媒体查询: 小屏适配 ========== */
+    @media (max-width: 768px) {
+      .intro-page h1 {
+        font-size: 2rem;
+      }
+      .intro-page p {
+        font-size: 1rem;
+      }
+      .album-grid h1 {
+        font-size: 2rem;
+      }
+      .album-item img {
+        height: 120px; 
+      }
+      .carousel-container {
+        width: 90vw;
+        max-width: 600px;
+        height: 60vh;
+      }
+      .carousel {
+        width: 100%; 
+        height: 100%;
+        transform: translate(-50%, -50%) translateZ(-300px);
+      }
+      .card {
+        width: 100%;
+        height: 100%;
+      }
+      .nav-button {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 粒子背景 -->
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- ========== A. 前置介绍页面 ========== -->
+  <div class="intro-page" id="introPage">
+    <h1>2024 已过 · 2025 即将到来</h1>
+    <p>
+      光阴似箭，日月如梭。  
+      2024 年的脚步已渐行渐远，  
+      迎面而来的，是崭新的 2025。  
+
+      在这交替之际，与蔡美轩一同回望过往，  
+      携手迎接新年的璀璨与希望……
+    </p>
+    <button id="enterAlbumBtn">进入相册</button>
+  </div>
+
+  <!-- ========== B. 相册列表 ========== -->
+  <div class="album-grid" id="albumGrid">
+    <h1>蔡美轩的四季相册</h1>
+    <div class="albums">
+      <!-- 四个封面，点击后进入相册 -->
+      <div class="album-item" data-season="1">
+        <img src="cover_spring.jpg" alt="春" onerror="this.src='1_1.jpg'">
+        <p>春 · Spring</p>
+      </div>
+      <div class="album-item" data-season="2">
+        <img src="cover_summer.jpg" alt="夏" onerror="this.src='2_1.jpg'">
+        <p>夏 · Summer</p>
+      </div>
+      <div class="album-item" data-season="3">
+        <img src="cover_autumn.jpg" alt="秋" onerror="this.src='3_1.jpg'">
+        <p>秋 · Autumn</p>
+      </div>
+      <div class="album-item" data-season="4">
+        <img src="cover_winter.jpg" alt="冬" onerror="this.src='4_1.jpg'">
+        <p>冬 · Winter</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== C. 3D 场景 ========== -->
+  <div class="scene" id="sceneContainer">
+    <button class="back-button" id="backBtn">返回相册列表</button>
+    <div class="carousel-container">
+      <div class="carousel" id="carousel"></div>
+      <!-- 左右箭头: 只有scene显示时才会出现 -->
+      <div class="nav-button left" id="prevBtn">&#10094;</div>
+      <div class="nav-button right" id="nextBtn">&#10095;</div>
+    </div>
+  </div>
+
+  <!-- ========== D. 全屏预览弹窗 ========== -->
+  <div class="fullscreen-overlay" id="fullscreenOverlay">
+    <span class="close-btn" id="closeOverlay">&times;</span>
+    <img id="overlayImg" src="" alt="Full Image">
+  </div>
+
+  <!-- ========== E. 音乐播放小插件 ========== -->
+  <div class="music-player">
+    <button id="musicToggle">加载中…</button>
+  </div>
+
+  <script>
+    /************************************************************
+     * 0. 粒子背景
+     ************************************************************/
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particlesArray = [];
+    const particleCount = 60;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+      constructor(){
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.radius = Math.random() * 2 + 1;
+        this.speedX = (Math.random() * 0.6) - 0.3;
+        this.speedY = (Math.random() * 0.6) - 0.3;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        // 边界反弹
+        if(this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+        if(this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.fillStyle = '#ffffff80';
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      particlesArray = [];
+      for(let i=0; i<particleCount; i++){
+        particlesArray.push(new Particle());
+      }
+    }
+    function animateParticles() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(const p of particlesArray){
+        p.update();
+        p.draw();
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    initParticles();
+    animateParticles();
+
+    /************************************************************
+     * 1. 创建音乐Audio对象 (尝试自动播放)
+     ************************************************************/
+    const bgm = new Audio("bgm.mp3");
+    bgm.loop = true;
+    bgm.volume = 0.6;
+
+    // 进入页面后，尝试自动播放
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("DOMContentLoaded: 尝试自动播放音乐");
+      bgm.play().then(() => {
+        console.log("音乐已自动播放");
+        musicToggle.textContent = "暂停音乐";
+        isPlaying = true;
+      }).catch(err => {
+        console.warn("自动播放被阻止:", err);
+        musicToggle.textContent = "播放音乐";
+        isPlaying = false;
+      });
+    });
+
+    // 给插件上的按钮绑定事件
+    let isPlaying = false; 
+    const musicToggle = document.getElementById("musicToggle");
+    musicToggle.addEventListener("click", () => {
+      if(!isPlaying){
+        bgm.play().then(() => {
+          musicToggle.textContent = "暂停音乐";
+          isPlaying = true;
+        }).catch(err => {
+          console.warn("用户点击后，播放失败:", err);
+        });
+      } else {
+        bgm.pause();
+        musicToggle.textContent = "播放音乐";
+        isPlaying = false;
+      }
+    });
+
+    /************************************************************
+     * 2. 前置页面 -> 点击进入相册
+     ************************************************************/
+    const introPage = document.getElementById('introPage');
+    const enterAlbumBtn = document.getElementById('enterAlbumBtn');
+    const albumGrid = document.getElementById('albumGrid');
+
+    enterAlbumBtn.addEventListener('click', () => {
+      introPage.classList.add('hidden');
+      setTimeout(() => {
+        introPage.style.display = 'none';
+        albumGrid.style.display = 'flex'; 
+      }, 800);
+    });
+
+    /************************************************************
+     * 3. 相册选择 -> 点击季节 -> 进入3D场景
+     ************************************************************/
+    const sceneContainer = document.getElementById('sceneContainer');
+    const carouselEl = document.getElementById('carousel');
+
+    // 配置每个季节对应的图片
+    const seasonImages = {
+      1: ["1_1.jpg","1_2.jpg","1_3.jpg"],
+      2: ["2_1.jpg","2_2.jpg"],
+      3: ["3_1.jpg","3_2.jpg","3_4.jpg"],
+      4: ["4_1.jpg","4_2.jpg","4_3.jpg","4_4.jpg","4_5.jpg","4_6.jpg","4_7.jpg","4_8.jpg","4_9.jpg"]
+    };
+
+    const albumItems = document.querySelectorAll('.album-item');
+    let currentIndex = 0;
+    let totalCount = 0;
+    let angleStep = 0;
+    const radius = 1000; // 3D环半径
+
+    albumItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const season = item.dataset.season;
+        loadSeasonImages(season);
+
+        albumGrid.style.display = 'none';
+        sceneContainer.style.display = 'flex';
+      });
+    });
+
+    function loadSeasonImages(season) {
+      carouselEl.innerHTML = '';
+      const imgs = seasonImages[season] || [];
+      totalCount = imgs.length;
+      angleStep = 360 / totalCount;
+      currentIndex = 0;
+
+      imgs.forEach((src, i) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const imgEl = document.createElement('img');
+        imgEl.src = src;
+        card.appendChild(imgEl);
+
+        // 分布到3D环上
+        const cardAngle = angleStep * i;
+        card.style.transform = `rotateY(${cardAngle}deg) translateZ(${radius}px)`;
+
+        // 点击图片 -> 全屏
+        card.addEventListener('click', () => {
+          showFullScreen(src);
+        });
+
+        carouselEl.appendChild(card);
+      });
+      updateCarousel();
+    }
+
+    function updateCarousel() {
+      carouselEl.style.transform = `translate(-50%, -50%) translateZ(-400px) rotateY(${-currentIndex * angleStep}deg)`;
+    }
+
+    // 上一张 / 下一张
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      currentIndex = (currentIndex - 1 + totalCount) % totalCount;
+      updateCarousel();
+    });
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      currentIndex = (currentIndex + 1) % totalCount;
+      updateCarousel();
+    });
+
+    // 返回按钮 -> 回到相册列表
+    const backBtn = document.getElementById('backBtn');
+    backBtn.addEventListener('click', () => {
+      sceneContainer.style.display = 'none';
+      albumGrid.style.display = 'flex';
+    });
+
+    /************************************************************
+     * 4. 全屏预览: 点击图片 -> 弹窗
+     ************************************************************/
+    const fullscreenOverlay = document.getElementById('fullscreenOverlay');
+    const overlayImg = document.getElementById('overlayImg');
+    const closeOverlay = document.getElementById('closeOverlay');
+
+    function showFullScreen(src) {
+      overlayImg.src = src;
+      fullscreenOverlay.style.display = 'flex';
+    }
+    closeOverlay.addEventListener('click', () => {
+      fullscreenOverlay.style.display = 'none';
+      overlayImg.src = '';
+    });
+  </script>
+</body>
+</html>

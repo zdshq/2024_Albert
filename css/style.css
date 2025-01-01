@@ -1,0 +1,166 @@
+/* ========== 全局重置 ========== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  background: radial-gradient(circle, #000 20%, #111 80%);
+  font-family: "Microsoft YaHei", Arial, sans-serif;
+  color: #fff;
+  overflow: hidden; /* 可根据需求隐藏或显示滚动条 */
+}
+
+/* ========== 音乐按钮 ========== */
+.music-controls {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 999;
+}
+.music-controls button {
+  margin-right: 10px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid #fff;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.music-controls button:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+/* ========== 相册选择界面 ========== */
+.album-grid {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  text-align: center;
+  background: transparent; /* 可改成炫酷图或视频背景 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.album-grid h1 {
+  margin-bottom: 50px;
+  font-size: 3em;
+  text-shadow: 0 0 10px #fff;
+}
+.albums {
+  display: flex;
+  gap: 50px;
+}
+/* 相册封面项 */
+.album-item {
+  width: 220px;
+  cursor: pointer;
+  transition: transform 0.5s, box-shadow 0.5s;
+  position: relative;
+}
+.album-item img {
+  width: 220px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 8px 15px rgba(0,0,0,0.5);
+}
+.album-item p {
+  margin-top: 10px;
+  font-size: 1.2em;
+}
+.album-item:hover {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+}
+
+/* 隐藏时 */
+.hidden {
+  display: none;
+}
+
+/* ========== 3D 相册详情 ========== */
+.scene {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  perspective: 1000px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent; /* 背景也可加炫酷粒子或星空图 */
+}
+
+/* 返回按钮 */
+.back-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 999;
+  padding: 10px 15px;
+  font-size: 14px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid #fff;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.back-button:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+/* 3D 容器 */
+.carousel {
+  position: relative;
+  width: 800px;
+  height: 500px;
+  transform-style: preserve-3d;
+  transform: translateZ(-300px);
+  transition: transform 1s ease-in-out;
+}
+
+/* 单个卡片 */
+.carousel .card {
+  position: absolute;
+  width: 800px;
+  height: 500px;
+  top: 0;
+  left: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  transition: transform 1s ease-in-out;
+}
+.carousel .card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 左右切换按钮 */
+.nav-button {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 3em;
+  color: #fff;
+  cursor: pointer;
+  z-index: 1000;
+  opacity: 0.7;
+  user-select: none;
+  transition: opacity 0.3s;
+}
+.nav-button:hover {
+  opacity: 1;
+}
+.left {
+  left: 40px;
+}
+.right {
+  right: 40px;
+}
